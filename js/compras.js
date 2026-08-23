@@ -72,12 +72,85 @@ function inicializarModalCompras() {
   recalcular();
 }
 
+function mostrarResultadoDePago(resultado) {
+  const panel = document.getElementById('pago-resultado');
+  if (!panel) return false;
+
+  const textos = {
+    exito: {
+      titulo: '¡Pago aprobado!',
+      mensaje: 'Tu pago fue acreditado con exito. Gracias por tu compra.',
+      fallo: false
+    },
+    pendiente: {
+      titulo: 'Pago pendiente',
+      mensaje: 'Tu pago quedo en proceso. Te avisaremos cuando se acredite.',
+      fallo: false
+    },
+    fallo: {
+      titulo: 'Pago no completado',
+      mensaje: 'El pago fue rechazado o cancelado. Podes intentarlo de nuevo.',
+      fallo: true
+    }
+  };
+
+  const info = textos[resultado];
+  if (!info) return false;
+
+  panel.hidden = true;
+  panel.classList.toggle('fallo', info.fallo);
+  document.getElementById('resultado-titulo').textContent = info.titulo;
+  document.getElementById('resultado-mensaje').textContent = info.mensaje;
+  panel.hidden = false;
+  return true;
+}
+
+function simularPago(boton) {
+  boton.textContent = 'Procesando pago...';
+  setTimeout(() => {
+    localStorage.removeItem('compra');
+    document.getElementById('resumen-compra').hidden = true;
+    document.getElementById('pago-exitoso').hidden = false;
+  }, 1200);
+}
+
+async function pagarConMercadoPago(compra, boton) {
+  try {
+    const r = await fetch('/.netlify/functions/crear-preferencia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cantidad: compra.cantidad,
+        precioUnitario: compra.precioUnitario
+      })
+    });
+    if (!r.ok) return false;
+    const data = await r.json();
+    if (!data || !data.initPoint) return false;
+    window.location.href = data.initPoint;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function inicializarPaginaComprar() {
   const panel = document.getElementById('resumen-compra');
   if (!panel) return;
 
   const panelVacio = document.getElementById('compra-vacia');
-  const panelExito = document.getElementById('pago-exitoso');
+
+  const params = new URLSearchParams(window.location.search);
+  const resultadoPago = params.get('pago');
+  if (resultadoPago) {
+    localStorage.removeItem('compra');
+    panel.hidden = true;
+    panelVacio.hidden = true;
+    if (mostrarResultadoDePago(resultadoPago)) {
+      history.replaceState({}, '', 'comprar.html');
+      return;
+    }
+  }
 
   let compra = null;
   try {
@@ -97,14 +170,11 @@ function inicializarPaginaComprar() {
 
   const btnPagar = document.getElementById('btn-pagar');
 
-  btnPagar.addEventListener('click', () => {
+  btnPagar.addEventListener('click', async () => {
     btnPagar.disabled = true;
-    btnPagar.textContent = 'Procesando pago...';
-    setTimeout(() => {
-      localStorage.removeItem('compra');
-      panel.hidden = true;
-      panelExito.hidden = false;
-    }, 1200);
+    const lanzado = await pagarConMercadoPago(compra, btnPagar);
+    if (lanzado) return;
+    simularPago(btnPagar);
   });
 }
 
