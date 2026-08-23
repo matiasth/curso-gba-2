@@ -14,7 +14,7 @@ create table if not exists public.site_data (
 insert into public.site_data (id, featured)
 values (
   1,
-  $${"featured":{"category":"Bulgaria","title":"Eurovision se hara en Bulgaria !!!!!!\naca va a ir mas texto","date":{"day":"21","month":"AGO","year":"2027"},"image":{"url":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRspLMhlYdolmzukEl00TJPjRSq4jgvevPNtiR8t86lfr7yjlRwv7Q0nEw&s=10","placeholder":"[FOTO: Fachada del edificio moderno de AVROTROS con su logotipo azul visible]"}}}$$::jsonb
+  $${"category":"Bulgaria","title":"Eurovision se hara en Bulgaria !!!!!!\naca va a ir mas texto","date":{"day":"21","month":"AGO","year":"2027"},"image":{"url":"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRspLMhlYdolmzukEl00TJPjRSq4jgvevPNtiR8t86lfr7yjlRwv7Q0nEw&s=10","placeholder":"[FOTO: Fachada del edificio moderno de AVROTROS con su logotipo azul visible]"}}$$::jsonb
 )
 on conflict (id) do nothing;
 
