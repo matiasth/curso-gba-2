@@ -36,8 +36,8 @@ body {
       <div class="alert alert-danger py-2 small fw-semibold" id="login-error" hidden></div>
 
       <div class="mb-3">
-        <label for="l-usuario" class="form-label text-uppercase small fw-semibold">Usuario</label>
-        <input type="text" class="form-control" id="l-usuario" autocomplete="username" autofocus>
+        <label for="l-email" class="form-label text-uppercase small fw-semibold">Email</label>
+        <input type="email" class="form-control" id="l-email" placeholder="admin@curso.com" autocomplete="username" autofocus>
       </div>
 
       <div class="mb-4">
@@ -53,6 +53,8 @@ body {
 </main>
 
 <script src="assets/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 

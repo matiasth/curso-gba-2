@@ -1,103 +1,76 @@
-const STORAGE_KEY = 'es_featured_v1';
-const AUTH_KEY = 'es_auth';
-let MODO_SERVIDOR = false;
+let supabaseClient = null;
+
+const INSTRUCCIONES_CONFIG =
+  'Falta configurar Supabase: abre js/supabase-config.js y pega tu Project URL y anon key. ' +
+  'Despues ejecuta supabase-setup.sql en el SQL Editor de tu proyecto.';
+
+function cliente() {
+  if (!supabaseClient) {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+  return supabaseClient;
+}
+
+function clonarSemilla() {
+  return JSON.parse(JSON.stringify(DEFAULT_DATA.featured));
+}
+
+async function obtenerDatos() {
+  if (!configuracionLista()) return clonarSemilla();
+  const { data, error } = await cliente()
+    .from('site_data')
+    .select('featured')
+    .eq('id', 1)
+    .single();
+  if (error || !data || !data.featured) {
+    console.warn('No se pudieron leer datos de Supabase:', error);
+    return clonarSemilla();
+  }
+  return data.featured;
+}
+
+async function guardarDatos(featured) {
+  const { data } = await cliente().auth.getSession();
+  if (!data || !data.session) {
+    throw new Error('Tu sesion expiro. Vuelve a iniciar sesion.');
+  }
+  const { error } = await cliente()
+    .from('site_data')
+    .update({ featured, updated_at: new Date().toISOString() })
+    .eq('id', 1);
+  if (error) {
+    if (error.message && error.message.toLowerCase().includes('row-level security')) {
+      throw new Error('Supabase bloqueo la escritura (RLS). Vuelve a iniciar sesion.');
+    }
+    throw new Error(error.message || 'Error desconocido al guardar.');
+  }
+}
 
 async function verificarSesion() {
-  try {
-    const res = await fetch('/api/check', { cache: 'no-store' });
-    if (res.ok) {
-      MODO_SERVIDOR = true;
-      return true;
-    }
-    if (res.status === 401) {
-      window.location.href = 'login.html';
-      return false;
-    }
-  } catch (e) {}
-  if (sessionStorage.getItem(AUTH_KEY) === '1') {
-    MODO_SERVIDOR = false;
-    return true;
+  if (!configuracionLista()) {
+    window.location.href = 'login.html';
+    return false;
   }
+  const { data } = await cliente().auth.getSession();
+  if (data && data.session) return true;
   window.location.href = 'login.html';
   return false;
 }
 
-async function iniciarSesion(usuario, clave) {
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario, clave })
-    });
-    if (res.ok) return { ok: true };
-    if (res.status === 401) return { ok: false, error: 'Credenciales incorrectas.' };
-    return { ok: false, error: 'Error del servidor (HTTP ' + res.status + ').' };
-  } catch (e) {
-    if (usuario === DEFAULT_CREDENCIALES.usuario && clave === DEFAULT_CREDENCIALES.clave) {
-      sessionStorage.setItem(AUTH_KEY, '1');
-      return { ok: true };
-    }
-    return { ok: false, error: 'Credenciales incorrectas.' };
+async function iniciarSesion(email, clave) {
+  const { error } = await cliente().auth.signInWithPassword({ email, password: clave });
+  if (!error) return { ok: true };
+  if (error.message && /invalid login credentials/i.test(error.message)) {
+    return { ok: false, error: 'Email o contrasena incorrectos.' };
   }
+  return { ok: false, error: error.message || 'No se pudo iniciar sesion.' };
 }
 
 async function cerrarSesion() {
   try {
-    await fetch('/api/logout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}'
-    });
+    await cliente().auth.signOut();
   } catch (e) {}
-  sessionStorage.removeItem(AUTH_KEY);
   window.location.href = 'login.html';
-}
-
-async function obtenerDatos() {
-  try {
-    const res = await fetch('data.json', { cache: 'no-store' });
-    if (res.ok) {
-      const json = await res.json();
-      if (json && json.featured && typeof json.featured.title === 'string' && json.featured.date && json.featured.image) {
-        MODO_SERVIDOR = true;
-        return json.featured;
-      }
-    }
-  } catch (e) {}
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const d = JSON.parse(raw);
-      if (d && typeof d.title === 'string' && d.date && d.image) {
-        return d;
-      }
-    }
-  } catch (e) {}
-  return JSON.parse(JSON.stringify(DEFAULT_DATA.featured));
-}
-
-async function persistirDatos(data) {
-  if (MODO_SERVIDOR) {
-    const res = await fetch('data.json', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      body: JSON.stringify({ featured: data }, null, 2) + '\n'
-    });
-    if (!res.ok) {
-      throw new Error('El servidor rechazo el guardado (HTTP ' + res.status + ').');
-    }
-    return;
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-async function restablecerOriginales() {
-  if (MODO_SERVIDOR) {
-    await persistirDatos(JSON.parse(JSON.stringify(DEFAULT_DATA.featured)));
-    return;
-  }
-  localStorage.removeItem(STORAGE_KEY);
 }
 
 function textoAltDesdePlaceholder(placeholder) {
@@ -202,11 +175,7 @@ function pintarFormulario(d) {
   actualizarVistaPrevia(d.image.url, d.image.placeholder);
 
   const modo = document.getElementById('modo-datos');
-  if (modo) {
-    modo.textContent = MODO_SERVIDOR
-      ? 'Modo servidor · escribe en data.json'
-      : 'Modo navegador · guarda solo aqui';
-  }
+  if (modo) modo.textContent = 'Base de datos · Supabase';
 }
 
 function recolectarFormulario() {
@@ -235,19 +204,24 @@ function completarConSemilla(datos) {
 }
 
 async function inicializarFormulario() {
-  const autorizado = await verificarSesion();
-  if (!autorizado) return;
-
-  const datosActuales = await obtenerDatos();
-  pintarFormulario(datosActuales);
-
-  const form = document.getElementById('edit-form');
   const errorBox = document.getElementById('form-error');
-
   const mostrarError = mensaje => {
     errorBox.textContent = mensaje;
     errorBox.hidden = false;
   };
+
+  if (!configuracionLista()) {
+    mostrarError(INSTRUCCIONES_CONFIG);
+    formDeshabilitar(true);
+    return;
+  }
+
+  const autorizado = await verificarSesion();
+  if (!autorizado) return;
+
+  pintarFormulario(await obtenerDatos());
+
+  const form = document.getElementById('edit-form');
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
@@ -264,12 +238,15 @@ async function inicializarFormulario() {
     const botonGuardar = form.querySelector('button[type="submit"]');
     botonGuardar.disabled = true;
     try {
-      await persistirDatos(datos);
-      mostrarToast('Cambios guardados. Volviendo a la portada...', 'success');
+      await guardarDatos(datos);
+      mostrarToast('Cambios guardados en la base de datos. Volviendo a la portada...', 'success');
       setTimeout(() => { window.location.href = 'index.html'; }, 900);
     } catch (err) {
-      mostrarError('No se pudo guardar. Abriste con iniciar-servidor.bat? (' + err.message + ')');
+      mostrarError(err.message);
       botonGuardar.disabled = false;
+      if (/sesion expiro/i.test(err.message)) {
+        setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+      }
     }
   });
 
@@ -281,13 +258,13 @@ async function inicializarFormulario() {
     const modalEl = document.getElementById('modal-restaurar');
     const modal = bootstrap.Modal.getInstance(modalEl);
     try {
-      await restablecerOriginales();
-      pintarFormulario(JSON.parse(JSON.stringify(DEFAULT_DATA.featured)));
+      await guardarDatos(clonarSemilla());
+      pintarFormulario(clonarSemilla());
       if (modal) modal.hide();
       mostrarToast('Valores originales restaurados.', 'success');
     } catch (err) {
       if (modal) modal.hide();
-      mostrarError('No se pudo restaurar. Abriste con iniciar-servidor.bat? (' + err.message + ')');
+      mostrarError(err.message);
     }
   });
 
@@ -296,25 +273,37 @@ async function inicializarFormulario() {
   document.getElementById('btn-logout-mobile').addEventListener('click', salir);
 }
 
+function formDeshabilitar(deshabilitar) {
+  document.querySelectorAll('#edit-form button, #edit-form input, #edit-form textarea')
+    .forEach(el => { el.disabled = deshabilitar; });
+}
+
 function inicializarLogin() {
   const form = document.getElementById('login-form');
   const errorBox = document.getElementById('login-error');
+
+  if (!configuracionLista()) {
+    errorBox.textContent = INSTRUCCIONES_CONFIG;
+    errorBox.hidden = false;
+    form.querySelector('button[type="submit"]').disabled = true;
+    return;
+  }
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
     errorBox.hidden = true;
 
-    const usuario = document.getElementById('l-usuario').value.trim();
+    const email = document.getElementById('l-email').value.trim();
     const clave = document.getElementById('l-clave').value;
-    if (!usuario || !clave) {
-      errorBox.textContent = 'Usuario y contraseña obligatorios.';
+    if (!email || !clave) {
+      errorBox.textContent = 'Email y contrasena obligatorios.';
       errorBox.hidden = false;
       return;
     }
 
     const boton = form.querySelector('button[type="submit"]');
     boton.disabled = true;
-    const resultado = await iniciarSesion(usuario, clave);
+    const resultado = await iniciarSesion(email, clave);
     if (resultado.ok) {
       window.location.href = 'admin.html';
     } else {

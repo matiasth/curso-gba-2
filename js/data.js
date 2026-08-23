@@ -1,8 +1,3 @@
-const DEFAULT_CREDENCIALES = {
-  usuario: "admin",
-  clave: "admin"
-};
-
 const DEFAULT_DATA = {
   featured: {
     category: "Países Bajos",
