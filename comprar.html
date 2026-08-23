@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comprar - Eurovision Spain</title>
+<style>
+:root {
+  --azul-principal: #0033A0;
+  --azul-logo: #2B407C;
+  --rosa: #D11D5D;
+  --gris-fondo: #F4F4F4;
+  --blanco: #FFFFFF;
+  --texto: #1a1a1a;
+  --texto-suave: #6b6b6b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--blanco);
+  color: var(--texto);
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+a { text-decoration: none; color: inherit; transition: color .2s ease; }
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.brand-icon span {
+  display: block;
+  width: 22px;
+  height: 3px;
+  background: var(--azul-logo);
+}
+
+.brand-text {
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.1;
+  letter-spacing: .02em;
+  color: var(--azul-logo);
+}
+
+.compra-main {
+  display: flex;
+  justify-content: center;
+  padding-top: 48px;
+  padding-bottom: 64px;
+}
+
+.panel {
+  background: var(--blanco);
+  width: 100%;
+  max-width: 480px;
+  border: 1px solid #e5e5e5;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .08);
+  padding: 32px;
+  height: fit-content;
+}
+
+.panel h1 {
+  margin: 0 0 24px;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--azul-logo);
+}
+
+.detalle-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #eeeeee;
+  font-size: .95rem;
+}
+
+.detalle-fila dt {
+  margin: 0;
+  color: var(--texto-suave);
+  font-weight: 600;
+}
+
+.detalle-fila dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.detalle-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--gris-fondo);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 18px;
+}
+
+.detalle-total dt {
+  margin: 0;
+  font-size: .85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--texto-suave);
+}
+
+.detalle-total dd {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--rosa);
+}
+
+.btn-pagar {
+  width: 100%;
+  margin-top: 24px;
+  border: none;
+  cursor: pointer;
+  background: var(--rosa);
+  color: #fff;
+  font-family: inherit;
+  font-size: .95rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 14px;
+  border-radius: 10px;
+  transition: background .2s ease, opacity .2s ease;
+}
+
+.btn-pagar:hover { background: #ad1850; }
+
+.btn-pagar:disabled { opacity: .6; cursor: wait; }
+
+.panel p {
+  margin: 0 0 20px;
+  color: var(--texto-suave);
+}
+
+.exito-icono {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #e7f5ea;
+  color: #2e9e4f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-exito { text-align: center; }
+
+.btn-volver {
+  display: inline-block;
+  background: var(--azul-principal);
+  color: #fff;
+  font-weight: 700;
+  font-size: .85rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 12px 22px;
+  border-radius: 10px;
+  transition: background .2s ease;
+}
+
+.btn-volver:hover { background: #00217a; }
+</style>
+</head>
+<body>
+
+<header class="container header">
+  <a href="index.html" class="brand" aria-label="Eurovision Spain - Volver a la portada">
+    <span class="brand-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="brand-text">Eurovision<br>Spain</span>
+  </a>
+</header>
+
+<main class="container compra-main">
+
+  <section class="panel" id="resumen-compra" aria-labelledby="titulo-comprar">
+    <h1 id="titulo-comprar">Resumen de tu compra</h1>
+    <dl>
+      <div class="detalle-fila">
+        <dt>Cantidad</dt>
+        <dd id="c-cantidad">-</dd>
+      </div>
+      <div class="detalle-fila">
+        <dt>Precio unitario</dt>
+        <dd id="c-precio">-</dd>
+      </div>
+    </dl>
+    <dl class="detalle-total">
+      <dt>Total a pagar</dt>
+      <dd id="c-total">-</dd>
+    </dl>
+    <button type="button" class="btn-pagar" id="btn-pagar">Pagar</button>
+  </section>
+
+  <section class="panel" id="compra-vacia" hidden>
+    <h1>No hay nada para comprar</h1>
+    <p>Volvé a la portada y elegi la cantidad que queres adquirir.</p>
+    <a href="index.html" class="btn-volver">Volver a la portada</a>
+  </section>
+
+  <section class="panel panel-exito" id="pago-exitoso" hidden>
+    <div class="exito-icono" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6 9 17l-5-5"/>
+      </svg>
+    </div>
+    <h1>&iexcl;Pago realizado!</h1>
+    <p>Tu compra fue procesada con exito.</p>
+    <a href="index.html" class="btn-volver">Volver a la portada</a>
+  </section>
+
+</main>
+
+<script src="js/compras.js"></script>
+
+</body>
+</html>
