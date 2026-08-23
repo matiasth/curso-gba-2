@@ -53,37 +53,6 @@ async function cerrarSesion() {
   window.location.href = 'login.html';
 }
 
-function inicializarLogin() {
-  const form = document.getElementById('login-form');
-  const errorBox = document.getElementById('login-error');
-
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    errorBox.hidden = true;
-
-    const usuario = document.getElementById('l-usuario').value.trim();
-    const clave = document.getElementById('l-clave').value;
-    if (!usuario || !clave) {
-      errorBox.textContent = 'Usuario y contraseña obligatorios.';
-      errorBox.hidden = false;
-      return;
-    }
-
-    const boton = form.querySelector('button[type="submit"]');
-    boton.disabled = true;
-    const resultado = await iniciarSesion(usuario, clave);
-    if (resultado.ok) {
-      window.location.href = 'editar.html';
-    } else {
-      errorBox.textContent = resultado.error;
-      errorBox.hidden = false;
-      boton.disabled = false;
-      document.getElementById('l-clave').value = '';
-      document.getElementById('l-clave').focus();
-    }
-  });
-}
-
 async function obtenerDatos() {
   try {
     const res = await fetch('data.json', { cache: 'no-store' });
@@ -96,7 +65,6 @@ async function obtenerDatos() {
     }
   } catch (e) {}
 
-  MODO_SERVIDOR = false;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -117,7 +85,7 @@ async function persistirDatos(data) {
       body: JSON.stringify({ featured: data }, null, 2) + '\n'
     });
     if (!res.ok) {
-      throw new Error('El servidor rechazó el guardado (HTTP ' + res.status + ').');
+      throw new Error('El servidor rechazo el guardado (HTTP ' + res.status + ').');
     }
     return;
   }
@@ -138,7 +106,7 @@ function textoAltDesdePlaceholder(placeholder) {
 
 function crearEtiquetaPlaceholder(texto) {
   const span = document.createElement('span');
-  span.className = 'media-label';
+  span.className = 'media-label small text-secondary px-3 text-center';
   span.textContent = texto;
   return span;
 }
@@ -189,13 +157,38 @@ async function renderizarDestacado() {
 function actualizarVistaPrevia(url, placeholderTexto) {
   const box = document.getElementById('preview');
   if (!box) return;
-  box.querySelectorAll('.media-img, .media-label').forEach(el => el.remove());
+  box.querySelectorAll('img, .media-label').forEach(el => el.remove());
   const fallback = () => box.appendChild(crearEtiquetaPlaceholder(placeholderTexto));
   if (url) {
     box.appendChild(crearImagen(url, '', fallback));
   } else {
     fallback();
   }
+}
+
+function mostrarToast(mensaje, tipo) {
+  const zona = document.getElementById('toast-zone');
+  if (!zona || typeof bootstrap === 'undefined') return;
+  const el = document.createElement('div');
+  el.className = 'toast align-items-center text-bg-' + tipo + ' border-0';
+  el.setAttribute('role', 'alert');
+  const cuerpo = document.createElement('div');
+  cuerpo.className = 'd-flex';
+  const texto = document.createElement('div');
+  texto.className = 'toast-body';
+  texto.textContent = mensaje;
+  const cierre = document.createElement('button');
+  cierre.type = 'button';
+  cierre.className = 'btn-close btn-close-white me-2 m-auto';
+  cierre.setAttribute('data-bs-dismiss', 'toast');
+  cierre.setAttribute('aria-label', 'Cerrar');
+  cuerpo.appendChild(texto);
+  cuerpo.appendChild(cierre);
+  el.appendChild(cuerpo);
+  zona.appendChild(el);
+  const toast = new bootstrap.Toast(el, { delay: 3500 });
+  toast.show();
+  el.addEventListener('hidden.bs.toast', () => el.remove());
 }
 
 function pintarFormulario(d) {
@@ -211,8 +204,8 @@ function pintarFormulario(d) {
   const modo = document.getElementById('modo-datos');
   if (modo) {
     modo.textContent = MODO_SERVIDOR
-      ? 'Modo servidor: los cambios se escriben en data.json'
-      : 'Modo sin servidor: los cambios se guardan solo en este navegador';
+      ? 'Modo servidor · escribe en data.json'
+      : 'Modo navegador · guarda solo aqui';
   }
 }
 
@@ -230,6 +223,15 @@ function recolectarFormulario() {
       placeholder: document.getElementById('f-placeholder').value.trim()
     }
   };
+}
+
+function completarConSemilla(datos) {
+  if (!datos.category) datos.category = DEFAULT_DATA.featured.category;
+  if (!datos.date.day) datos.date.day = DEFAULT_DATA.featured.date.day;
+  if (!datos.date.month) datos.date.month = DEFAULT_DATA.featured.date.month;
+  if (!datos.date.year) datos.date.year = DEFAULT_DATA.featured.date.year;
+  if (!datos.image.placeholder) datos.image.placeholder = DEFAULT_DATA.featured.image.placeholder;
+  return datos;
 }
 
 async function inicializarFormulario() {
@@ -251,25 +253,22 @@ async function inicializarFormulario() {
     e.preventDefault();
     errorBox.hidden = true;
 
-    const datos = recolectarFormulario();
+    let datos = recolectarFormulario();
     if (!datos.title) {
-      mostrarError('El título es obligatorio.');
+      mostrarError('El titulo es obligatorio.');
       document.getElementById('f-titulo').focus();
       return;
     }
-    if (!datos.category) datos.category = DEFAULT_DATA.featured.category;
-    if (!datos.date.day) datos.date.day = DEFAULT_DATA.featured.date.day;
-    if (!datos.date.month) datos.date.month = DEFAULT_DATA.featured.date.month;
-    if (!datos.date.year) datos.date.year = DEFAULT_DATA.featured.date.year;
-    if (!datos.image.placeholder) datos.image.placeholder = DEFAULT_DATA.featured.image.placeholder;
+    datos = completarConSemilla(datos);
 
     const botonGuardar = form.querySelector('button[type="submit"]');
     botonGuardar.disabled = true;
     try {
       await persistirDatos(datos);
-      window.location.href = 'index.html';
+      mostrarToast('Cambios guardados. Volviendo a la portada...', 'success');
+      setTimeout(() => { window.location.href = 'index.html'; }, 900);
     } catch (err) {
-      mostrarError('No se pudo guardar. ¿Abriste la página con iniciar-servidor.bat? (' + err.message + ')');
+      mostrarError('No se pudo guardar. Abriste con iniciar-servidor.bat? (' + err.message + ')');
       botonGuardar.disabled = false;
     }
   });
@@ -278,19 +277,54 @@ async function inicializarFormulario() {
     actualizarVistaPrevia(e.target.value.trim(), document.getElementById('f-placeholder').value.trim());
   });
 
-  document.getElementById('btn-restaurar').addEventListener('click', async () => {
-    if (confirm('¿Restaurar los valores originales de la semilla? Se descartarán los cambios actuales.')) {
-      try {
-        await restablecerOriginales();
-        pintarFormulario(JSON.parse(JSON.stringify(DEFAULT_DATA.featured)));
-        actualizarVistaPrevia(DEFAULT_DATA.featured.image.url, DEFAULT_DATA.featured.image.placeholder);
-      } catch (err) {
-        mostrarError('No se pudo restaurar. ¿Abriste la página con iniciar-servidor.bat? (' + err.message + ')');
-      }
+  document.getElementById('btn-confirmar-restaurar').addEventListener('click', async () => {
+    const modalEl = document.getElementById('modal-restaurar');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    try {
+      await restablecerOriginales();
+      pintarFormulario(JSON.parse(JSON.stringify(DEFAULT_DATA.featured)));
+      if (modal) modal.hide();
+      mostrarToast('Valores originales restaurados.', 'success');
+    } catch (err) {
+      if (modal) modal.hide();
+      mostrarError('No se pudo restaurar. Abriste con iniciar-servidor.bat? (' + err.message + ')');
     }
   });
 
-  document.getElementById('btn-logout').addEventListener('click', cerrarSesion);
+  const salir = () => cerrarSesion();
+  document.getElementById('btn-logout').addEventListener('click', salir);
+  document.getElementById('btn-logout-mobile').addEventListener('click', salir);
+}
+
+function inicializarLogin() {
+  const form = document.getElementById('login-form');
+  const errorBox = document.getElementById('login-error');
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    errorBox.hidden = true;
+
+    const usuario = document.getElementById('l-usuario').value.trim();
+    const clave = document.getElementById('l-clave').value;
+    if (!usuario || !clave) {
+      errorBox.textContent = 'Usuario y contraseña obligatorios.';
+      errorBox.hidden = false;
+      return;
+    }
+
+    const boton = form.querySelector('button[type="submit"]');
+    boton.disabled = true;
+    const resultado = await iniciarSesion(usuario, clave);
+    if (resultado.ok) {
+      window.location.href = 'admin.html';
+    } else {
+      errorBox.textContent = resultado.error;
+      errorBox.hidden = false;
+      boton.disabled = false;
+      document.getElementById('l-clave').value = '';
+      document.getElementById('l-clave').focus();
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
