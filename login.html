@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceso administrador - Eurovision Spain</title>
+<style>
+:root {
+  --azul-principal: #0033A0;
+  --azul-logo: #2B407C;
+  --rosa: #D11D5D;
+  --gris-fondo: #F4F4F4;
+  --blanco: #FFFFFF;
+  --texto: #1a1a1a;
+  --texto-suave: #6b6b6b;
+  --borde: #cccccc;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gris-fondo);
+  color: var(--texto);
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--blanco);
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .1);
+  padding: 36px 32px 30px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.brand-icon { display: flex; flex-direction: column; gap: 4px; }
+.brand-icon span { display: block; width: 22px; height: 3px; background: var(--azul-logo); }
+
+.brand-text {
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.1;
+  letter-spacing: .02em;
+  color: var(--azul-logo);
+}
+
+.login-card h1 {
+  margin: 14px 0 2px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.login-card > p {
+  margin: 0 0 24px;
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: .85rem;
+}
+
+.field { margin-bottom: 16px; }
+
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.field input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--azul-principal);
+  box-shadow: 0 0 0 2px rgba(0, 51, 160, .15);
+}
+
+.error-msg {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fdecef;
+  border: 1px solid var(--rosa);
+  color: var(--rosa);
+  font-size: .85rem;
+  font-weight: 600;
+}
+
+.btn-entrar {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: var(--azul-principal);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: .95rem;
+}
+
+.btn-entrar:hover { background: #00217a; }
+.btn-entrar:disabled { opacity: .6; cursor: wait; }
+
+.back-link {
+  display: block;
+  margin-top: 20px;
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: .8rem;
+}
+
+.back-link:hover { color: var(--azul-principal); }
+</style>
+</head>
+<body>
+
+<main class="login-card">
+  <div class="brand" aria-hidden="true">
+    <span class="brand-icon"><span></span><span></span><span></span></span>
+    <span class="brand-text">Eurovision<br>Spain</span>
+  </div>
+  <h1>Acceso al administrador</h1>
+  <p>Introduce tus credenciales para gestionar la portada.</p>
+
+  <form id="login-form" novalidate>
+    <p class="error-msg" id="login-error" hidden></p>
+
+    <div class="field">
+      <label for="l-usuario">Usuario</label>
+      <input type="text" id="l-usuario" autocomplete="username" autofocus>
+    </div>
+
+    <div class="field">
+      <label for="l-clave">Contraseña</label>
+      <input type="password" id="l-clave" autocomplete="current-password">
+    </div>
+
+    <button type="submit" class="btn-entrar">Entrar</button>
+  </form>
+
+  <a href="index.html" class="back-link">&larr; Volver a la portada sin iniciar sesión</a>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
